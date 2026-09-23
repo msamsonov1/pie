@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Pie Chart Ratio Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Custom range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 12px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 9999px;
+            transition: background 0.3s ease;
+        }
+
+        .dark input[type=range]::-webkit-slider-runnable-track {
+            background: #334155;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: #6366f1;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.15s ease, background-color 0.2s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background: #4f46e5;
+        }
+
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 12px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 9999px;
+        }
+
+        input[type=range]::-moz-range-thumb {
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: #6366f1;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.15s ease;
+        }
+
+        /* SVG slice transitions */
+        .pie-slice {
+            transition: d 0.1s ease-out;
+            cursor: pointer;
+        }
+
+        .pie-slice:hover {
+            filter: brightness(1.05);
+        }
+
+        /* Custom glow effects */
+        .glow-primary {
+            box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col justify-between transition-colors duration-300">
+
+    <!-- Header Navigation -->
+    <header class="w-full max-w-6xl mx-auto px-6 py-6 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <div class="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid font-bold fa-chart-pie text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">Pie Ratio Visualizer</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Interactive Math & Data Tool</p>
+            </div>
+        </div>
+        
+        <!-- Controls Header -->
+        <div class="flex items-center space-x-3">
+            <button id="themeToggle" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                <i class="fa-solid fa-moon text-slate-600 dark:text-amber-400 text-lg" id="themeIcon"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="w-full max-w-6xl mx-auto px-6 py-4 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        
+        <!-- Left Side: Interactive Controls & Data Displays -->
+        <div class="lg:col-span-6 space-y-6">
+            
+            <div class="bg-white dark:bg-slate-800/80 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-slate-200/80 dark:border-slate-700/60 shadow-xl shadow-slate-200/50 dark:shadow-none space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Slice Proportion Control</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Adjust the slider below to split the pie chart into two dynamic sectors.</p>
+                </div>
+
+                <!-- Primary Fields Grid (Percentage & Degrees) -->
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <!-- Field 1: Percentage -->
+                    <div class="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-100 dark:border-slate-800 transition-all hover:border-indigo-200 dark:hover:border-indigo-900">
+                        <div class="flex items-center justify-between text-xs font-semibold text-slate-400 dark:text-slate-400 mb-1">
+                            <span>PERCENTAGE</span>
+                            <i class="fa-solid fa-percent text-indigo-500"></i>
+                        </div>
+                        <div class="flex items-baseline space-x-1">
+                            <span id="percentDisplay" class="text-3xl md:text-4xl font-extrabold text-indigo-600 dark:text-indigo-400 tracking-tight">50.0</span>
+                            <span class="text-xl font-bold text-indigo-600 dark:text-indigo-400">%</span>
+                        </div>
+                        <div class="mt-2 text-[11px] text-slate-400 flex justify-between">
+                            <span>Sector 1: <strong id="p1Text" class="text-slate-600 dark:text-slate-300">50%</strong></span>
+                            <span>Sector 2: <strong id="p2Text" class="text-slate-600 dark:text-slate-300">50%</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Field 2: Degrees -->
+                    <div class="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-100 dark:border-slate-800 transition-all hover:border-emerald-200 dark:hover:border-emerald-900">
+                        <div class="flex items-center justify-between text-xs font-semibold text-slate-400 dark:text-slate-400 mb-1">
+                            <span>DEGREES</span>
+                            <i class="fa-solid fa-compass text-emerald-500"></i>
+                        </div>
+                        <div class="flex items-baseline space-x-1">
+                            <span id="degreesDisplay" class="text-3xl md:text-4xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">180.0</span>
+                            <span class="text-xl font-bold text-emerald-600 dark:text-emerald-400">°</span>
+                        </div>
+                        <div class="mt-2 text-[11px] text-slate-400 flex justify-between">
+                            <span>Sector 1: <strong id="d1Text" class="text-slate-600 dark:text-slate-300">180°</strong></span>
+                            <span>Sector 2: <strong id="d2Text" class="text-slate-600 dark:text-slate-300">180°</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slider Component -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex justify-between items-center text-sm font-medium">
+                        <label for="ratioSlider" class="text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-indigo-500"></i> Ratio Slider
+                        </label>
+                        <span id="sliderValBadge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                            50 / 50
+                        </span>
+                    </div>
+
+                    <input type="range" id="ratioSlider" min="0" max="100" value="50" step="0.5" class="w-full">
+
+                    <div class="flex justify-between text-xs text-slate-400 font-medium px-1">
+                        <span>0% (0°)</span>
+                        <span>25% (90°)</span>
+                        <span>50% (180°)</span>
+                        <span>75% (270°)</span>
+                        <span>100% (360°)</span>
+                    </div>
+                </div>
+
+                <!-- Preset Quick Selection Buttons -->
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                    <span class="text-xs font-semibold text-slate-400 block mb-2">QUICK PRESETS</span>
+                    <div class="grid grid-cols-5 gap-2">
+                        <button data-preset="10" class="preset-btn py-1.5 px-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition">10%</button>
+                        <button data-preset="25" class="preset-btn py-1.5 px-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition">25%</button>
+                        <button data-preset="50" class="preset-btn py-1.5 px-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition">50%</button>
+                        <button data-preset="75" class="preset-btn py-1.5 px-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition">75%</button>
+                        <button data-preset="90" class="preset-btn py-1.5 px-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition">90%</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Math Breakdown Card -->
+            <div class="bg-indigo-900/5 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-xl p-4 text-xs text-slate-600 dark:text-slate-400 flex items-start space-x-3">
+                <i class="fa-solid fa-lightbulb text-indigo-500 text-base mt-0.5"></i>
+                <div class="space-y-1">
+                    <span class="font-semibold text-slate-800 dark:text-slate-200">How it's calculated:</span>
+                    <p>Degree = <code class="bg-indigo-100 dark:bg-indigo-900/50 px-1 py-0.5 rounded text-indigo-700 dark:text-indigo-300">(Percentage / 100) × 360°</code></p>
+                    <p>Example: <span id="formulaExample" class="font-mono text-indigo-600 dark:text-indigo-400">(50.0 / 100) × 360 = 180°</span></p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Side: Interactive SVG Pie Chart Display -->
+        <div class="lg:col-span-6 flex flex-col items-center justify-center space-y-6">
+            
+            <div class="relative w-full max-w-[380px] aspect-square flex items-center justify-center p-4">
+                
+                <!-- SVG Pie Container -->
+                <svg id="pieSvg" viewBox="-120 -120 240 240" class="w-full h-full drop-shadow-2xl overflow-visible">
+                    <!-- Background Shadow Circle -->
+                    <circle cx="0" cy="0" r="100" class="fill-slate-100 dark:fill-slate-800" />
+                    
+                    <!-- Slice 2 (Remaining sector background) -->
+                    <path id="slice2" class="pie-slice fill-slate-300 dark:fill-slate-700 transition-colors duration-200" d=""></path>
+                    
+                    <!-- Slice 1 (Active primary sector) -->
+                    <path id="slice1" class="pie-slice fill-indigo-600 dark:fill-indigo-500 transition-colors duration-200" d=""></path>
+                    
+                    <!-- Inner Circle for Doughnut Effect (Optional aesthetic) -->
+                    <circle cx="0" cy="0" r="45" class="fill-white dark:fill-slate-900 shadow-inner" />
+                    
+                    <!-- Center Overlay Info -->
+                    <text x="0" y="-6" text-anchor="middle" class="fill-slate-400 dark:fill-slate-500 font-semibold text-[10px] uppercase tracking-wider">Primary Ratio</text>
+                    <text id="svgCenterText" x="0" y="14" text-anchor="middle" class="fill-slate-900 dark:fill-white font-extrabold text-lg">50%</text>
+
+                    <!-- Interactive Angle Marker Line -->
+                    <line id="angleMarker" x1="0" y1="0" x2="0" y2="-90" stroke="#f43f5e" stroke-width="2.5" stroke-dasharray="4 3" opacity="0.85" />
+                    <circle id="angleMarkerTip" cx="0" cy="-90" r="4" fill="#f43f5e" />
+                </svg>
+
+                <!-- Floating Legend Badge Sector 1 -->
+                <div class="absolute bottom-2 left-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-md flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-indigo-600 dark:bg-indigo-500 inline-block"></span>
+                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Sector A</span>
+                </div>
+
+                <!-- Floating Legend Badge Sector 2 -->
+                <div class="absolute bottom-2 right-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-md flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700 inline-block"></span>
+                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Sector B</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-6xl mx-auto px-6 py-4 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
+        Dynamic Data Visualization • Built with SVG & JavaScript
+    </footer>
+
+    <script>
+        // DOM Elements
+        const ratioSlider = document.getElementById('ratioSlider');
+        const percentDisplay = document.getElementById('percentDisplay');
+        const degreesDisplay = document.getElementById('degreesDisplay');
+        const p1Text = document.getElementById('p1Text');
+        const p2Text = document.getElementById('p2Text');
+        const d1Text = document.getElementById('d1Text');
+        const d2Text = document.getElementById('d2Text');
+        const sliderValBadge = document.getElementById('sliderValBadge');
+        const formulaExample = document.getElementById('formulaExample');
+        const svgCenterText = document.getElementById('svgCenterText');
+        
+        const slice1 = document.getElementById('slice1');
+        const slice2 = document.getElementById('slice2');
+        const angleMarker = document.getElementById('angleMarker');
+        const angleMarkerTip = document.getElementById('angleMarkerTip');
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+
+        // SVG Circle radius
+        const RADIUS = 90;
+
+        // Convert percentage to SVG path string for pie sector
+        function getArcPath(percentage) {
+            if (percentage <= 0) return '';
+            if (percentage >= 100) {
+                // Return full circle path
+                return `M 0 -${RADIUS} A ${RADIUS} ${RADIUS} 0 1 1 -0.01 -${RADIUS} Z`;
+            }
+
+            const angleDeg = (percentage / 100) * 360;
+            const angleRad = (angleDeg - 90) * (Math.PI / 180);
+
+            const x = RADIUS * Math.cos(angleRad);
+            const y = RADIUS * Math.sin(angleRad);
+
+            // Large arc flag is 1 if angle > 180 degrees
+            const largeArcFlag = angleDeg > 180 ? 1 : 0;
+
+            // M 0 0 -> line to center
+            // L 0 -RADIUS -> line straight up
+            // A RADIUS RADIUS 0 largeArcFlag 1 x y -> Arc to end point
+            // Z -> Close path back to center
+            return `M 0 0 L 0 -${RADIUS} A ${RADIUS} ${RADIUS} 0 ${largeArcFlag} 1 ${x} ${y} Z`;
+        }
+
+        // Convert remaining percentage to full background arc path
+        function getComplementArcPath(percentage) {
+            if (percentage >= 100) return '';
+            if (percentage <= 0) {
+                return `M 0 -${RADIUS} A ${RADIUS} ${RADIUS} 0 1 1 -0.01 -${RADIUS} Z`;
+            }
+
+            const angleDeg = (percentage / 100) * 360;
+            const startRad = (angleDeg - 90) * (Math.PI / 180);
+
+            const startX = RADIUS * Math.cos(startRad);
+            const startY = RADIUS * Math.sin(startRad);
+
+            const remainingDeg = 360 - angleDeg;
+            const largeArcFlag = remainingDeg > 180 ? 1 : 0;
+
+            // Arc starting from end of Sector 1 back to top (0, -RADIUS)
+            return `M 0 0 L ${startX} ${startY} A ${RADIUS} ${RADIUS} 0 ${largeArcFlag} 1 0 -${RADIUS} Z`;
+        }
+
+        // Update view and recalculate values
+        function updateVisualization(percentVal) {
+            const percent = parseFloat(percentVal);
+            const degrees = (percent / 100) * 360;
+
+            const remainingPercent = 100 - percent;
+            const remainingDegrees = 360 - degrees;
+
+            // 1. Update text displays
+            percentDisplay.textContent = percent.toFixed(1);
+            degreesDisplay.textContent = degrees.toFixed(1);
+
+            p1Text.textContent = `${percent.toFixed(1)}%`;
+            p2Text.textContent = `${remainingPercent.toFixed(1)}%`;
+
+            d1Text.textContent = `${degrees.toFixed(1)}°`;
+            d2Text.textContent = `${remainingDegrees.toFixed(1)}°`;
+
+            sliderValBadge.textContent = `${Math.round(percent)} / ${Math.round(remainingPercent)}`;
+            svgCenterText.textContent = `${percent.toFixed(0)}%`;
+
+            formulaExample.textContent = `(${percent.toFixed(1)} / 100) × 360 = ${degrees.toFixed(1)}°`;
+
+            // 2. Update SVG Paths
+            slice1.setAttribute('d', getArcPath(percent));
+            slice2.setAttribute('d', getComplementArcPath(percent));
+
+            // 3. Update Angle Marker Line Position
+            const angleRad = (degrees - 90) * (Math.PI / 180);
+            const markerX = RADIUS * Math.cos(angleRad);
+            const markerY = RADIUS * Math.sin(angleRad);
+
+            if (percent > 0 && percent < 100) {
+                angleMarker.setAttribute('x2', markerX);
+                angleMarker.setAttribute('y2', markerY);
+                angleMarkerTip.setAttribute('cx', markerX);
+                angleMarkerTip.setAttribute('cy', markerY);
+                angleMarker.style.display = 'block';
+                angleMarkerTip.style.display = 'block';
+            } else {
+                angleMarker.style.display = 'none';
+                angleMarkerTip.style.display = 'none';
+            }
+        }
+
+        // Slider Input Event
+        ratioSlider.addEventListener('input', (e) => {
+            updateVisualization(e.target.value);
+        });
+
+        // Preset Button Listeners
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const val = btn.getAttribute('data-preset');
+                ratioSlider.value = val;
+                updateVisualization(val);
+            });
+        });
+
+        // Theme Toggle Logic
+        let isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (isDark) {
+            document.documentElement.classList.add('dark');
+            themeIcon.className = 'fa-solid fa-sun text-amber-400 text-lg';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            isDark = !isDark;
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                themeIcon.className = 'fa-solid fa-sun text-amber-400 text-lg';
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-moon text-slate-600 text-lg';
+            }
+        });
+
+        // Initial setup on load
+        window.onload = function() {
+            updateVisualization(ratioSlider.value);
+        };
+    </script>
+</body>
+</html>
